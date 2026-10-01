@@ -1,13 +1,16 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ARvoters — Slide show</title>
-<!-- arvoters_slideshow  v1.2.0  (2026-07-14)
+<!-- arvoters_slideshow  v1.2.1  (2026-10-01)
      One-slide-at-a-time full-window PDF viewer for the About-page decks.
      Exists because browser PDF viewers differ: Firefox has Presentation
      Mode, Safari has nothing. Renders via PDF.js in its OWN tab (no
      builder iframe -> fullscreen API works, incl. Mac Safari).
 
-     v1.2.0: THE VIEWER HAD NO EXIT. Once you were in it there was no way
+     v1.2.1: the statewide deck (ARvoters_Explainer_Deck_Statewide.pdf)
+     is added to the allowlist. Nothing else changes.
+
+     v1.2.0 (2026-07-14): THE VIEWER HAD NO EXIT. Once you were in it there was no way
      back to the site — the operator had to KILL SAFARI to get out, which
      is not a thing a presenter can do on stage. Two fixes:
        (1) PERSISTENT EXIT control, top-right. NOT in the auto-hiding HUD:
@@ -106,7 +109,8 @@
   var DECKS = {
     "ARvoters_Explainer_Deck_Conway.pdf": "Conway &amp; the Data Center",
     "ARvoters_Technical_Deck.pdf":        "ARvoters — Technical Overview",
-    "ARvoters_Legislator_Deck.pdf":       "ARvoters — For Legislators"
+    "ARvoters_Legislator_Deck.pdf":       "ARvoters — For Legislators",
+    "ARvoters_Explainer_Deck_Statewide.pdf": "ARvoters, plainly"
   };
   var BASE = "https://fbrssqcgqpwstibfdwkb.supabase.co/storage/v1/object/public/SpecialReports/about/";
   var HOME = "https://arvoters.com";
