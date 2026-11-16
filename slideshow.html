@@ -1,11 +1,26 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ARvoters — Slide show</title>
-<!-- arvoters_slideshow  v1.2.1  (2026-10-01)
+<!-- arvoters_slideshow  v1.2.2  (2026-11-16)
      One-slide-at-a-time full-window PDF viewer for the About-page decks.
      Exists because browser PDF viewers differ: Firefox has Presentation
      Mode, Safari has nothing. Renders via PDF.js in its OWN tab (no
      builder iframe -> fullscreen API works, incl. Mac Safari).
+
+     v1.2.2: EXIT DID NOTHING WHEN THE DECK WAS OPENED FROM THE ABOUT PAGE.
+     Every Slide show link on /about opens this viewer in a NEW TAB
+     (target=_blank), so the tab's history holds one entry. The referrer is
+     arvoters.com, so v1.2.0's rule chose history.back() -- and in a tab with
+     one history entry back() is a no-op. The Exit button, the Q key and the
+     end card's Return button all did nothing, in every browser (measured in
+     Chromium and Firefox, WO 2026-11-16-W2-K_v1 P1). Now: back() only when
+     there IS a page to go back to (history.length > 1); a tab opened from
+     arvoters.com with nothing to go back to closes itself, which returns the
+     reader to the About tab they came from; if the browser refuses the close,
+     the tab goes to arvoters.com/about. Every path that tries back() or
+     close() has a timed fallback to a direct URL, cleared on pagehide so a
+     page restored from the back-forward cache never jumps. Opened cold (a
+     bookmark or a QR code, no arvoters.com referrer): arvoters.com, as before.
 
      v1.2.1: the statewide deck (ARvoters_Explainer_Deck_Statewide.pdf)
      is added to the allowlist. Nothing else changes.
@@ -114,6 +129,8 @@
   };
   var BASE = "https://fbrssqcgqpwstibfdwkb.supabase.co/storage/v1/object/public/SpecialReports/about/";
   var HOME = "https://arvoters.com";
+  var ABOUT = HOME + "/about";            /* v1.2.2: every Slide show link lives on /about */
+  var FALLBACK_MS = 700;
   var deck = new URLSearchParams(location.search).get("deck") || "";
   var errBox = document.getElementById("err"), errLink = document.getElementById("errlink");
   function fail(msg, url){
@@ -140,12 +157,30 @@
      history.back() when we came from arvoters.com (keeps the visitor's scroll
      position); a direct URL otherwise — including when the deck was opened
      cold from a bookmark or a QR code, where there IS no back. */
+  /* v1.2.2: the one rule for where Exit goes. back() and close() can each
+     silently do nothing, so each is followed by a timed direct URL. */
+  var fallbackTimer = null;
+  function exitPlan(from, historyLength){
+    var fromSite = from.indexOf(HOME) === 0;
+    if (fromSite && historyLength > 1) return "back";
+    if (fromSite) return "close";              /* own tab, opened by the About page's link */
+    return "home";                             /* cold: a bookmark or a QR code */
+  }
+  window.addEventListener("pagehide", function(){ clearTimeout(fallbackTimer); });
   function leaveViewer(){
     var active = document.fullscreenElement || document.webkitFullscreenElement;
     function nav(){
-      var from = document.referrer || "";
-      if (from.indexOf(HOME) === 0) history.back();
-      else location.href = HOME;
+      var plan = exitPlan(document.referrer || "", history.length);
+      clearTimeout(fallbackTimer);
+      if (plan === "back") {
+        history.back();
+        fallbackTimer = setTimeout(function(){ location.href = ABOUT; }, FALLBACK_MS);
+      } else if (plan === "close") {
+        try { window.close(); } catch(e) {}
+        fallbackTimer = setTimeout(function(){ location.href = ABOUT; }, FALLBACK_MS);
+      } else {
+        location.href = HOME;
+      }
     }
     if (!active) { nav(); return; }
     try {
